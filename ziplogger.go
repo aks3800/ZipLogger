@@ -7,7 +7,7 @@ import (
 
 // Init values required for functionality to work upon.
 type Init struct {
-	logFilePath string
+	LogFilePath string
 }
 
 type cronJobTicker struct {
