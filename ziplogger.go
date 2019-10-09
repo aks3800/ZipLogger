@@ -2,6 +2,9 @@ package ziplogger
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -33,6 +36,7 @@ func (logger Init) SetUpCRON() {
 	for {
 		<-jobTicker.timer.C
 		fmt.Println(time.Now(), "- just ticked")
+		jobTicker.cronFunctionality(logger.LogFilePath)
 		jobTicker.updateTimer()
 	}
 }
@@ -51,4 +55,18 @@ func (t *cronJobTicker) updateTimer() {
 	} else {
 		t.timer.Reset(diff)
 	}
+}
+
+// cronFunctionality Function which will rename the log file and create a new log file.
+func (t *cronJobTicker) cronFunctionality(logFileName string) {
+	newName := logFileName + strconv.Itoa(time.Now().Year()) + strconv.Itoa(int(time.Now().Month())) + strconv.Itoa(time.Now().Day())
+	err := os.Rename(logFileName, newName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	f, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	f.Close()
 }
