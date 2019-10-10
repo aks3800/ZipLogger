@@ -2,6 +2,8 @@ package ziplogger
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -24,7 +26,7 @@ const IntervalPeriod time.Duration = 24 * time.Hour
 const HourToTick int = 14
 
 //MinuteToTick Minute at which CRON Job will run
-const MinuteToTick int = 25
+const MinuteToTick int = 4
 
 //SecondToTick Second at which CRON Job will run
 const SecondToTick int = 0
@@ -59,14 +61,27 @@ func (t *cronJobTicker) updateTimer() {
 
 // cronFunctionality Function which will rename the log file and create a new log file.
 func (t *cronJobTicker) cronFunctionality(logFileName string) {
-	newName := logFileName + strconv.Itoa(time.Now().Year()) + strconv.Itoa(int(time.Now().Month())) + strconv.Itoa(time.Now().Day())
-	err := os.Rename(logFileName, newName)
+	destinationFilePath := logFileName + strconv.Itoa(time.Now().Year()) + strconv.Itoa(int(time.Now().Month())) + strconv.Itoa(time.Now().Day())
+	in, err := os.Open(logFileName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	f, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	defer in.Close()
+
+	out, err := os.Create(destinationFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	f.Close()
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer out.Close()
+
+	err = ioutil.WriteFile(logFileName, []byte(""), 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
