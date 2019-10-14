@@ -6,13 +6,15 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
 
-// Init values required for functionality to work upon.
-type Init struct {
-	LogFilePath string
+// LoggerDetails values required for functionality to work upon.
+type LoggerDetails struct {
+	LogFilePath  string
+	ZipFrequency int
 }
 
 type cronJobTicker struct {
@@ -23,16 +25,21 @@ type cronJobTicker struct {
 const IntervalPeriod time.Duration = 24 * time.Hour
 
 //HourToTick Hour at which CRON Job will run
-const HourToTick int = 14
+const HourToTick int = 16
 
 //MinuteToTick Minute at which CRON Job will run
-const MinuteToTick int = 4
+const MinuteToTick int = 55
 
 //SecondToTick Second at which CRON Job will run
 const SecondToTick int = 0
 
-// SetUpCRON Function which will schedule CRON JOB
-func (logger Init) SetUpCRON() {
+// Init Function which will schedule CRON JOB
+func (logger LoggerDetails) Init() {
+	go setUpCRON(logger)
+}
+
+// setUpCRON Function which will schedule CRON JOB
+func setUpCRON(logger LoggerDetails) {
 	jobTicker := &cronJobTicker{}
 	jobTicker.updateTimer()
 	for {
@@ -61,7 +68,9 @@ func (t *cronJobTicker) updateTimer() {
 
 // cronFunctionality Function which will rename the log file and create a new log file.
 func (t *cronJobTicker) cronFunctionality(logFileName string) {
-	destinationFilePath := logFileName + strconv.Itoa(time.Now().Year()) + strconv.Itoa(int(time.Now().Month())) + strconv.Itoa(time.Now().Day())
+	extension := filepath.Ext(logFileName)
+	destinationFileName := logFileName[0 : len(logFileName)-len(extension)]
+	destinationFilePath := destinationFileName + strconv.Itoa(time.Now().Year()) + strconv.Itoa(int(time.Now().Month())) + strconv.Itoa(time.Now().Day()) + extension
 	in, err := os.Open(logFileName)
 	if err != nil {
 		log.Fatal(err)
